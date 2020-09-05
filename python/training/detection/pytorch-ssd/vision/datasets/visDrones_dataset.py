@@ -44,6 +44,8 @@ class VisDronesDataset:
             image, boxes, labels = self.transform(image, boxes, labels)
         if self.target_transform:
             boxes, labels = self.target_transform(boxes, labels)
+
+        #logging.info(f"size of image: {image.shape}\nsize of boxes: {boxes.shape}\nsize of labels: {labels.shape}")
         return image_info['image_id'], image, boxes, labels
 
     def __getitem__(self, index):
@@ -89,7 +91,7 @@ class VisDronesDataset:
             df["XMax"] = (df["bbox_left"] + df["bbox_width"]).values.astype(np.float32)
             df["YMax"] = (df["bbox_top"] + df["bbox_height"]).values.astype(np.float32)
             boxes = df.loc[:, ["XMin", "YMin", "XMax", "YMax"]].values.astype(np.float32)
-            labels = df["object_category"]
+            labels = np.array(df["object_category"].values.tolist(), dtype=np.int64)
             data.append({
                 'image_id': img_id,
                 'boxes': boxes,

@@ -208,7 +208,10 @@ if __name__ == '__main__':
     # load datasets (could be multiple)
     logging.info("Prepare training datasets.")
     datasets = []
+
     # for dataset_path in args.datasets:
+    dataset_path = args.datasets[0]
+
     if args.dataset_type == 'voc':
         dataset = VOCDataset(dataset_path, transform=train_transform,
                              target_transform=target_transform)
@@ -240,9 +243,9 @@ if __name__ == '__main__':
 
     # create training dataset
     logging.info(f"Stored labels into file {label_file}.")
-    train_dataset = ConcatDataset(datasets)
-    logging.info("Train dataset size: {}".format(len(train_dataset)))
-    train_loader = DataLoader(train_dataset,
+    #train_dataset = ConcatDataset(datasets)
+    logging.info("Train dataset size: {}".format(len(dataset)))
+    train_loader = DataLoader(dataset,
                               batch_size=args.batch_size,
                               num_workers=args.num_workers,
                               shuffle=True)
