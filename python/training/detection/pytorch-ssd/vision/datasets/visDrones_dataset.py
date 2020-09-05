@@ -88,10 +88,10 @@ class VisDronesDataset:
             df["YMin"] = (df["bbox_top"]).values.astype(np.float32)
             df["XMax"] = (df["bbox_left"] + df["bbox_width"]).values.astype(np.float32)
             df["YMax"] = (df["bbox_top"] + df["bbox_height"]).values.astype(np.float32)
-            boxes = group.loc[:, ["XMin", "YMin", "XMax", "YMax"]].values.astype(np.float32)
+            boxes = df.loc[:, ["XMin", "YMin", "XMax", "YMax"]].values.astype(np.float32)
             labels = df["object_category"]
             data.append({
-                'image_id': image_id,
+                'image_id': img_id,
                 'boxes': boxes,
                 'labels': labels
             })
@@ -128,7 +128,7 @@ class VisDronesDataset:
 
     def __repr__(self):
         if self.class_stat is None:
-            self.class_stat = {name: 0 for name in self.class_names[1:]}
+            self.class_stat = {name: 0 for name in self.class_names}
             for example in self.data:
                 for class_index in example['labels']:
                     class_name = self.class_names[class_index]

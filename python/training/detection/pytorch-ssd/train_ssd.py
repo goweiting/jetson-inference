@@ -257,7 +257,7 @@ if __name__ == '__main__':
                                         transform=test_transform, target_transform=target_transform,
                                         dataset_type="test")
     elif args.dataset_type == 'visDrones_2019':
-        val_dataset = OpenImagesDataset(dataset_path,
+        val_dataset = VisDronesDataset(dataset_path,
                                         transform=test_transform, target_transform=target_transform,
                                         dataset_type="val")
     logging.info(val_dataset)
@@ -353,7 +353,7 @@ if __name__ == '__main__':
     logging.info(f"Start training from epoch {last_epoch + 1}.")
 
     for epoch in range(last_epoch + 1, args.num_epochs):
-        scheduler.step()
+
         train(train_loader, net, criterion, optimizer,
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
 
@@ -369,4 +369,5 @@ if __name__ == '__main__':
             net.save(model_path)
             logging.info(f"Saved model {model_path}")
 
+        scheduler.step()
     logging.info("Task done, exiting program.")
