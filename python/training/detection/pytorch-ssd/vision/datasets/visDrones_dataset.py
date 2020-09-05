@@ -64,8 +64,8 @@ class VisDronesDataset:
         return image
 
     def _read_data(self):
-        annotation_directory = f"{self.root}/VisDrones2019-DET-{self.dataset_type}/annotations/"
-        img_directory = f"{self.root}/VisDrones2019-DET-{self.dataset_type}/images/"
+        annotation_directory = f"{self.root}/VisDrone2019-DET-{self.dataset_type}/annotations/"
+        img_directory = f"{self.root}/VisDrone2019-DET-{self.dataset_type}/images/"
         data = []
         class_names = ["ignored_regions", "pedestrian", "person", "bicycle", "car", "van", "truck", "tricycle", "awning-tricycle", "bus", "motor", "others"]
         class_dict = {class_name: i for i,class_name in enumerate(class_names)}
