@@ -1,0 +1,6 @@
+[submodule "ssd"]
+	path = ssd
+	url = https://github.com/dusty-nv/pytorch-ssd
+[submodule "pytorch-ssd"]
+	path = pytorch-ssd
+	url = git@github.com:dusty-nv/pytorch-ssd.git
