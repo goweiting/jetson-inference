@@ -20,7 +20,7 @@ from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite
 from vision.ssd.squeezenet_ssd_lite import create_squeezenet_ssd_lite
 from vision.datasets.voc_dataset import VOCDataset
 from vision.datasets.open_images import OpenImagesDataset
-# from vision.dataset.visDrones_dataset import VisDronesDataset
+from vision.dataset.visDrones_dataset import VisDronesDataset
 from vision.nn.multibox_loss import MultiboxLoss
 from vision.ssd.config import vgg_ssd_config
 from vision.ssd.config import mobilenetv1_ssd_config
@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser(
 
 # Params for datasets
 parser.add_argument("--dataset-type", default="open_images", type=str,
-                    help='Specify dataset type. Currently supports voc and open_images.')
+                    help='Specify dataset type. Currently supports voc and open_images, visDrones_2019.')
 parser.add_argument('--datasets', '--data', nargs='+', default=["data"], help='Dataset directory path')
 parser.add_argument('--balance-data', action='store_true',
                     help="Balance training data by down-sampling more frequent labels.")
@@ -216,10 +216,20 @@ if __name__ == '__main__':
             label_file = os.path.join(args.checkpoint_folder, "labels.txt")
             store_labels(label_file, dataset.class_names)
             num_classes = len(dataset.class_names)
+
         elif args.dataset_type == 'open_images':
             dataset = OpenImagesDataset(dataset_path,
                  transform=train_transform, target_transform=target_transform,
                  dataset_type="train", balance_data=args.balance_data)
+            label_file = os.path.join(args.checkpoint_folder, "labels.txt")
+            store_labels(label_file, dataset.class_names)
+            logging.info(dataset)
+            num_classes = len(dataset.class_names)
+
+        elif args.dataset_type == "visDrones_2019":
+            dataset = VisDronesDataset(dataset_path,
+                transform=train_transform, target_transform=target_transform,
+                dataset_type="train", balance_data=args.balance_data)
             label_file = os.path.join(args.checkpoint_folder, "labels.txt")
             store_labels(label_file, dataset.class_names)
             logging.info(dataset)
@@ -246,7 +256,11 @@ if __name__ == '__main__':
         val_dataset = OpenImagesDataset(dataset_path,
                                         transform=test_transform, target_transform=target_transform,
                                         dataset_type="test")
-        logging.info(val_dataset)
+    elif args.dataset_type == 'visDrones_2019':
+        val_dataset = OpenImagesDataset(dataset_path,
+                                        transform=test_transform, target_transform=target_transform,
+                                        dataset_type="val")
+    logging.info(val_dataset)
     logging.info("Validation dataset size: {}".format(len(val_dataset)))
 
     val_loader = DataLoader(val_dataset, args.batch_size,
