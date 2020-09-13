@@ -266,7 +266,7 @@ if __name__ == '__main__':
     logging.info(val_dataset)
     logging.info("Validation dataset size: {}".format(len(val_dataset)))
 
-    val_loader = DataLoader(val_dataset, args.batch_size,
+    val_loader = DataLoader(val_dataset, 2, # args.batch_size,
                             num_workers=args.num_workers,
                             shuffle=False)
 
@@ -356,11 +356,12 @@ if __name__ == '__main__':
     logging.info(f"Start training from epoch {last_epoch + 1}.")
 
     for epoch in range(last_epoch + 1, args.num_epochs):
-
         train(train_loader, net, criterion, optimizer,
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
 
         if epoch % args.validation_epochs == 0 or epoch == args.num_epochs - 1:
+            logging.info("loading validation set")
+
             val_loss, val_regression_loss, val_classification_loss = test(val_loader, net, criterion, DEVICE)
             logging.info(
                 f"Epoch: {epoch}, " +

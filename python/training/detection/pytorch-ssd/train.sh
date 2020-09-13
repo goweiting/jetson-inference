@@ -1,1 +1,1 @@
-python3 train_ssd.py --dataset-type="visDrones_2019" --datasets="../../../../data/images/visDrone2019/" --checkpoint-folder="models/visDrones_mbssd/" --batch-size=2 --use-cuda=1 --lr=0.0001y
+python3 train_ssd.py --dataset-type="visDrones_2019" --datasets="../../../../data/images/visDrone2019/" --checkpoint-folder="models/visDrones_mb2ssdlite/" --batch-size=3 --use-cuda=1 --lr=0.0001 --net="mb2-ssd-lite" --pretrained-ssd="models/mb2-ssd-lite-mp-0_686.pth"

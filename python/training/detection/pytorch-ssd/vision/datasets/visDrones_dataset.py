@@ -77,6 +77,7 @@ class VisDronesDataset:
             # Read the file and group the csv file by the category of objects found in the image
             df = pd.read_csv(os.path.join(annotation_directory,annotation_file),
                             names=["bbox_left","bbox_top","bbox_width","bbox_height","score","object_category","truncation","occlusion"])
+            df = df[df['object_category'] != 0]
             #logging.info(f'annotations loaded from:  {annotation_file}')
             img_id = annotation_file.split(".txt")[0] #image id is based on the file name which is similar to the image
             img_path = os.path.join(img_directory, img_id + '.jpg')
