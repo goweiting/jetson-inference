@@ -5,6 +5,7 @@ from vision.ssd.mobilenetv1_ssd_lite import create_mobilenetv1_ssd_lite, create_
 from vision.ssd.squeezenet_ssd_lite import create_squeezenet_ssd_lite, create_squeezenet_ssd_lite_predictor
 from vision.datasets.voc_dataset import VOCDataset
 from vision.datasets.open_images import OpenImagesDataset
+from vision.datasets.visDrones_dataset import VisDronesDataset
 from vision.utils import box_utils, measurements
 from vision.utils.misc import str2bool, Timer
 import argparse
@@ -129,6 +130,8 @@ if __name__ == '__main__':
         dataset = VOCDataset(args.dataset, is_test=True)
     elif args.dataset_type == 'open_images':
         dataset = OpenImagesDataset(args.dataset, dataset_type="test")
+    elif args.dataset_type == "visDrones_2019":
+        dataset = VisDronesDataset(args.dataset, dataset_type="test")
 
     true_case_stat, all_gb_boxes, all_difficult_cases = group_annotation_by_class(dataset)
     if args.net == 'vgg16-ssd':
@@ -144,7 +147,7 @@ if __name__ == '__main__':
     else:
         logging.fatal("The net type is wrong. It should be one of vgg16-ssd, mb1-ssd and mb1-ssd-lite.")
         parser.print_help(sys.stderr)
-        sys.exit(1)  
+        sys.exit(1)
 
     timer.start("Load Model")
     net.load(args.trained_model)
@@ -212,6 +215,3 @@ if __name__ == '__main__':
         print(f"{class_name}: {ap}")
 
     print(f"\nAverage Precision Across All Classes:{sum(aps)/len(aps)}")
-
-
-
