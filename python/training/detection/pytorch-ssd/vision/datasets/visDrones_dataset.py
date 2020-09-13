@@ -26,7 +26,7 @@ class VisDronesDataset:
         if self.balance_data:
             self.data = self._balance_data()
         self.ids = [info['image_id'] for info in self.data]
-
+        logging.info(f"number of class = {len(self.class_names)}")
         self.class_stat = None
 
     def _getitem(self, index):
@@ -70,7 +70,7 @@ class VisDronesDataset:
         img_directory = f"{self.root}/VisDrone2019-DET-{self.dataset_type}/images/"
         data = []
         class_names = ["ignored_regions", "pedestrian", "person", "bicycle", "car", "van", "truck", "tricycle", "awning-tricycle", "bus", "motor", "others"]
-        class_dict = {class_name: i for i,class_name in enumerate(class_names)}
+        class_dict = {class_name: i for i, class_name in enumerate(class_names)}
 
         # Go through each of the file in the directory and add into data dict
         for annotation_file in os.listdir(annotation_directory):
