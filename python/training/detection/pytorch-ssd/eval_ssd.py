@@ -40,21 +40,24 @@ def group_annotation_by_class(dataset):
     true_case_stat = {}
     all_gt_boxes = {}
     all_difficult_cases = {}
+    
     for i in range(len(dataset)):
         image_id, annotation = dataset.get_annotation(i)
         gt_boxes, classes, is_difficult = annotation
         gt_boxes = torch.from_numpy(gt_boxes)
-        for i, difficult in enumerate(is_difficult):
-            class_index = int(classes[i])
+        
+        for i, difficult in enumerate(is_difficult): #enumerate through all the boxes...
+            class_index = int(classes[i]) # find the class the box belongs to
             gt_box = gt_boxes[i]
             if not difficult:
-                true_case_stat[class_index] = true_case_stat.get(class_index, 0) + 1
+                true_case_stat[class_index] = true_case_stat.get(class_index, 0) + 1  #what is the purpose of this true_case_state?????
 
             if class_index not in all_gt_boxes:
                 all_gt_boxes[class_index] = {}
             if image_id not in all_gt_boxes[class_index]:
                 all_gt_boxes[class_index][image_id] = []
             all_gt_boxes[class_index][image_id].append(gt_box)
+            
             if class_index not in all_difficult_cases:
                 all_difficult_cases[class_index]={}
             if image_id not in all_difficult_cases[class_index]:
@@ -134,6 +137,7 @@ if __name__ == '__main__':
         dataset = VisDronesDataset(args.dataset, dataset_type="test-dev")
 
     true_case_stat, all_gb_boxes, all_difficult_cases = group_annotation_by_class(dataset)
+
     if args.net == 'vgg16-ssd':
         net = create_vgg_ssd(len(class_names), is_test=True)
     elif args.net == 'mb1-ssd':
@@ -170,13 +174,13 @@ if __name__ == '__main__':
 
     results = []
     for i in range(len(dataset)):
-        print("process image", i)
-        timer.start("Load Image")
+        #print("process image", i)
+        #timer.start("Load Image")
         image = dataset.get_image(i)
-        print("Load Image: {:4f} seconds.".format(timer.end("Load Image")))
-        timer.start("Predict")
+        #print("Load Image: {:4f} seconds.".format(timer.end("Load Image")))
+        #timer.start("Predict")
         boxes, labels, probs = predictor.predict(image)
-        print("Prediction: {:4f} seconds.".format(timer.end("Predict")))
+        #print("Prediction: {:4f} seconds.".format(timer.end("Predict")))
         indexes = torch.ones(labels.size(0), 1, dtype=torch.float32) * i
         results.append(torch.cat([
             indexes.reshape(-1, 1),
@@ -185,11 +189,14 @@ if __name__ == '__main__':
             boxes + 1.0  # matlab's indexes start from 1
         ], dim=1))
     results = torch.cat(results)
+    
     for class_index, class_name in enumerate(class_names):
         if class_index == 0: continue  # ignore background
         prediction_path = eval_path / f"det_test_{class_name}.txt"
+        
         with open(prediction_path, "w") as f:
             sub = results[results[:, 1] == class_index, :]
+            
             for i in range(sub.size(0)):
                 prob_box = sub[i, 2:].numpy()
                 image_id = dataset.ids[int(sub[i, 0])]
@@ -197,6 +204,7 @@ if __name__ == '__main__':
                     image_id + " " + " ".join([str(v) for v in prob_box]),
                     file=f
                 )
+    
     aps = []
     print("\n\nAverage Precision Per-class:")
     for class_index, class_name in enumerate(class_names):

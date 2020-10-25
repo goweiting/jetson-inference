@@ -52,6 +52,7 @@ parser.add_argument('--base-net', help='Pretrained base model')
 parser.add_argument('--pretrained-ssd', default='models/mobilenet-v1-ssd-mp-0_675.pth', type=str, help='Pre-trained base model')
 parser.add_argument('--resume', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
+#parser.add_argument('--last-epoch',default=-1, type=int, help='the epoch number for the checkpoint to be in')
 
 # Params for SGD
 parser.add_argument('--lr', '--learning-rate', default=0.01, type=float,
@@ -125,6 +126,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
         running_loss += loss.item()
         running_regression_loss += regression_loss.item()
         running_classification_loss += classification_loss.item()
+        
         if i and i % debug_steps == 0:
             avg_loss = running_loss / debug_steps
             avg_reg_loss = running_regression_loss / debug_steps
@@ -141,6 +143,8 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
 
 
 def test(loader, net, criterion, device):
+
+    net.train(False)
     net.eval()
     running_loss = 0.0
     running_regression_loss = 0.0
@@ -149,13 +153,11 @@ def test(loader, net, criterion, device):
 
 
     with torch.no_grad(): # diable gradient calculation
-        for _, data in enumerate(loader):
-            images, boxes, labels = data
+        for _, (images, boxes, labels) in enumerate(loader):
             images = images.to(device)
             boxes = boxes.to(device)
             labels = labels.to(device)
             num += 1
-
 
             confidence, locations = net(images)
             regression_loss, classification_loss = criterion(confidence, locations, labels, boxes)
@@ -211,6 +213,8 @@ if __name__ == '__main__':
     # load datasets (could be multiple)
     logging.info("Prepare training datasets.")
     datasets = []
+    dataset_path = args.datasets[0]
+
     # for dataset_path in args.datasets:
     if args.dataset_type == 'voc':
         dataset = VOCDataset(dataset_path, transform=train_transform,
@@ -243,9 +247,9 @@ if __name__ == '__main__':
 
     # create training dataset
     logging.info(f"Stored labels into file {label_file}.")
-    train_dataset = ConcatDataset(datasets)
-    logging.info("Train dataset size: {}".format(len(train_dataset)))
-    train_loader = DataLoader(train_dataset,
+    #train_dataset = ConcatDataset(dataset)
+    logging.info("Train dataset size: {}".format(len(dataset)))
+    train_loader = DataLoader(dataset,
                               batch_size=args.batch_size,
                               num_workers=args.num_workers,
                               shuffle=True)
@@ -266,7 +270,7 @@ if __name__ == '__main__':
     logging.info(val_dataset)
     logging.info("Validation dataset size: {}".format(len(val_dataset)))
 
-    val_loader = DataLoader(val_dataset, args.batch_size,
+    val_loader = DataLoader(val_dataset, batch_size=2,
                             num_workers=args.num_workers,
                             shuffle=False)
 
@@ -303,7 +307,8 @@ if __name__ == '__main__':
         logging.info("Freeze all the layers except prediction heads.")
     else:
         params = [
-            {'params': net.base_net.parameters(), 'lr': base_net_lr},
+            {'params': net.base_net.parameters(), 
+                'lr': base_net_lr},
             {'params': itertools.chain(
                 net.source_layer_add_ons.parameters(),
                 net.extras.parameters()
@@ -361,6 +366,7 @@ if __name__ == '__main__':
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
 
         if epoch % args.validation_epochs == 0 or epoch == args.num_epochs - 1:
+            logging.info(f"validation step at epoch {epoch}")
             val_loss, val_regression_loss, val_classification_loss = test(val_loader, net, criterion, DEVICE)
             logging.info(
                 f"Epoch: {epoch}, " +
