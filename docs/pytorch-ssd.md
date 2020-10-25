@@ -19,15 +19,16 @@ To get started, first make sure that you have [JetPack 4.4](https://developer.nv
 
 > **note:** first make sure that you have [JetPack 4.4](https://developer.nvidia.com/embedded/jetpack) or newer on your Jetson and [PyTorch installed](pytorch-transfer-learning.md#installing-pytorch) for **Python 3.6**
 
-The PyTorch code for training SSD-Mobilenet is found in the repo under [`jetson-inference/python/training/detection/ssd`](https://github.com/dusty-nv/pytorch-ssd).  There are a couple steps required before using it:
+The PyTorch code for training SSD-Mobilenet is found in the repo under [`jetson-inference/python/training/detection/ssd`](https://github.com/dusty-nv/pytorch-ssd).  If you aren't [Running the Docker Container](aux-docker.md), there are a couple steps required before using it:
 
 ```bash
+# you only need to run these if you aren't using the container
 $ cd jetson-inference/python/training/detection/ssd
 $ wget https://nvidia.box.com/shared/static/djf5w54rjvpqocsiztzaandq1m3avr7c.pth -O models/mobilenet-v1-ssd-mp-0_675.pth
 $ pip3 install -v -r requirements.txt
 ```
 
-This will download the [base model](https://nvidia.box.com/shared/static/djf5w54rjvpqocsiztzaandq1m3avr7c.pth) to `ssd/models` and install some required Python packages.  The base model was already pre-trained on a different dataset (PASCAL VOC) so that we don't need to train SSD-Mobilenet from scratch, which would take much longer.  Instead we'll use transfer learning to fine-tune it to detect new object classes of our choosing.
+This will download the [base model](https://nvidia.box.com/shared/static/djf5w54rjvpqocsiztzaandq1m3avr7c.pth) to `ssd/models` and install some required Python packages (these were already installed into the container).  The base model was already pre-trained on a different dataset (PASCAL VOC) so that we don't need to train SSD-Mobilenet from scratch, which would take much longer.  Instead we'll use transfer learning to fine-tune it to detect new object classes of our choosing.
 
 ## Downloading the Data
 
@@ -38,7 +39,7 @@ The [Open Images](https://storage.googleapis.com/openimages/web/visualizer/index
 The classes that we'll be using are `"Apple,Orange,Banana,Strawberry,Grape,Pear,Pineapple,Watermelon"`, for example for a fruit-picking robot - although you are welcome to substitute your own choices from the [class list](https://github.com/dusty-nv/pytorch-ssd/blob/master/open_images_classes.txt). The fruit classes have ~6500 images, which is a happy medium.
 
 ```bash
-$ python3 open_images_downloader.py --class-names "Apple,Orange,Banana,Strawberry,Grape,Pear,Pineapple,Watermelon"
+$ python3 open_images_downloader.py --class-names "Apple,Orange,Banana,Strawberry,Grape,Pear,Pineapple,Watermelon" --data=data/fruit
 ...
 2020-07-09 16:20:42 - Starting to download 6360 images.
 2020-07-09 16:20:42 - Downloaded 100 images.
@@ -51,7 +52,7 @@ $ python3 open_images_downloader.py --class-names "Apple,Orange,Banana,Strawberr
 2020-07-09 16:32:12 - Task Done.
 ```
 
-By default, the dataset will be downloaded to the `data/` directory under `jetson-inference/python/training/detection/ssd`, but you can change that by specifying the `--data=<PATH>` option.  Depending on the size of your dataset, it may be necessary to use external storage.  And if you download multiple datasets, you should store each dataset in their own subdirectory.
+By default, the dataset will be downloaded to the `data/` directory under `jetson-inference/python/training/detection/ssd` (which is automatically [mounted into the container](aux-docker.md#mounted-data-volumes)), but you can change that by specifying the `--data=<PATH>` option.  Depending on the size of your dataset, it may be necessary to use external storage.  And if you download multiple datasets, you should store each dataset in their own subdirectory.
 
 ### Limiting the Amount of Data
 
@@ -60,7 +61,7 @@ Depending on the classes that you select, Open Images can contain lots of data -
 So when selecting your own classes, before downloading the data it's recommended to first run the downloader script with the `--stats-only` option.  This will show how many images there are for your classes, without actually downloading any images.  
 
 ``` bash
-$ python3 open_images_downloader.py --stats-only --class-names "Apple,Orange,Banana,Strawberry,Grape,Pear,Pineapple,Watermelon"
+$ python3 open_images_downloader.py --stats-only --class-names "Apple,Orange,Banana,Strawberry,Grape,Pear,Pineapple,Watermelon" --data=data/fruit
 ...
 2020-07-09 16:18:06 - Total available images: 6360
 2020-07-09 16:18:06 - Total available boxes:  27188
@@ -96,7 +97,7 @@ In practice, to keep the training time down (and disk space), you probably want 
 For example, if you wanted to only use 2500 images for the fruit dataset, you would launch the downloader like this:
 
 ``` bash
-$ python3 open_images_downloader.py --max-images=2500 --class-names "Apple,Orange,Banana,Strawberry,Grape,Pear,Pineapple,Watermelon"
+$ python3 open_images_downloader.py --max-images=2500 --class-names "Apple,Orange,Banana,Strawberry,Grape,Pear,Pineapple,Watermelon" --data=data/fruit
 ```
 
 If the `--max-boxes` option isn't set, by default all the data available will be downloaded - so beforehand, be sure to check the amount of data first with `--stats-only`.  Unfortunately it isn't possible in advance to determine the actual disk size requirements of the images, but a general rule of thumb for this dataset is to budget ~350KB per image (~2GB for the fruits).
@@ -117,22 +118,22 @@ Below is approximate SSD-Mobilenet training performance to help estimate the tim
 Once your data has finished downloading, run the `train_ssd.py` script to launch the training:
 
 ```bash
-python3 train_ssd.py --model-dir=models/fruit --batch-size=4 --num-epochs=30
+python3 train_ssd.py --data=data/fruit --model-dir=models/fruit --batch-size=4 --epochs=30
 ```
 
 > **note:** if you run out of memory or your process is "killed" during training, try [Mounting SWAP](pytorch-transfer-learning.md#mounting-swap) and [Disabling the Desktop GUI](pytorch-transfer-learning.md#disabling-the-desktop-gui). <br/>
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; to save memory, you can also reduce the `--batch-size` (default 4) and `--num-workers` (default 2)
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; to save memory, you can also reduce the `--batch-size` (default 4) and `--workers` (default 2)
   
 Here are some common options that you can run the training script with:
 
-| Argument        |  Default  | Description                                                |
-|-----------------|:---------:|------------------------------------------------------------|
-| `--data`        |  `data/`  | the location of the dataset                                |
-| `--model-dir`   | `models/` | directory to output the trained model checkpoints          |
-| `--resume`      |    None   | path to an existing checkpoint to resume training from     |
-| `--batch-size`  |     4     | try increasing depending on available memory               |
-| `--num-epochs`  |     30    | up to 100 is desirable, but will increase training time    |
-| `--num-workers` |     2     | number of data loader threads (0 = disable multithreading) |
+| Argument       |  Default  | Description                                                |
+|----------------|:---------:|------------------------------------------------------------|
+| `--data`       |  `data/`  | the location of the dataset                                |
+| `--model-dir`  | `models/` | directory to output the trained model checkpoints          |
+| `--resume`     |    None   | path to an existing checkpoint to resume training from     |
+| `--batch-size` |     4     | try increasing depending on available memory               |
+| `--epochs`     |     30    | up to 100 is desirable, but will increase training time    |
+| `--workers`    |     2     | number of data loader threads (0 = disable multithreading) |
 
 Over time, you should see the loss decreasing:
 
@@ -147,7 +148,7 @@ Over time, you should see the loss decreasing:
 2020-07-10 13:19:26 - Saved model models/fruit/mb1-ssd-Epoch-0-Loss-5.672993580500285.pth
 ```
 
-If you want to test your model before the full number of epochs have completed training, you can press `Ctrl+C` to kill the training script, and resume it again later on using the `--resume=<CHECKPOINT>` argument.  You can download the fruit model that was already trained for 100 epochs from [here](https://nvidia.box.com/shared/static/gq0zlf0g2r258g3ldabl9o7vch18cxmi.gz).
+If you want to test your model before the full number of epochs have completed training, you can press `Ctrl+C` to kill the training script, and resume it again later with the `--resume=<CHECKPOINT>` argument.  You can download the fruit model that was already trained for 100 epochs [here](https://nvidia.box.com/shared/static/gq0zlf0g2r258g3ldabl9o7vch18cxmi.gz).
 
 ## Converting the Model to ONNX
 
@@ -164,16 +165,16 @@ This will save a model called `ssd-mobilenet.onnx` under `jetson-inference/pytho
 To classify some static test images, we'll use the extended command-line parameters to `detectnet` (or `detectnet.py`) to load our custom SSD-Mobilenet ONNX model.  To run these commands, the working directory of your terminal should still be located in:  `jetson-inference/python/training/detection/ssd/`
 
 ```bash
-mkdir test_fruit
+IMAGES=<path-to-your-jetson-inference>/data/images   # substitute your jetson-inference path here
 
 detectnet --model=models/fruit/ssd-mobilenet.onnx --labels=models/fruit/labels.txt \
           --input-blob=input_0 --output-cvg=scores --output-bbox=boxes \
-            "images/fruit_*.jpg" test_fruit
+            "$IMAGES/fruit_*.jpg" $IMAGES/test/fruit_%i.jpg
 ```
 
 > **note:**  `detectnet.py` can be substituted above to run the Python version of the program
 
-Below are some of the images output to the `test_fruit/` directory:
+Below are some of the images output to the `$IMAGES/test` directory:
 
 <img src="https://github.com/dusty-nv/jetson-inference/raw/dev/docs/images/pytorch-fruit-2.jpg">
 
